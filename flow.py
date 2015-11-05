@@ -80,17 +80,17 @@ class Origin(gdb.Command):
                     i = getinsn()
             if src.type == X86_OP_MEM:
                 if src.mem.index:
-                    print("indexed src")
-                    print(src.mem.scale)
+                    print("index (int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
+                    addr = gdb.parse_and_eval("(int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
                 else:
                     addr = gdb.parse_and_eval("(int*)($%s + %d)" % (i.reg_name(src.mem.base), src.mem.disp))
-                    location = ("*(int*)(%s)" % (addr))
-                    print("mem used " + location)
-                    b = gdb.Breakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
-                    gdb.execute("rc")
-                    #XXX temporary breakpoints aren't working for some reason, so we delete manually
-                    # print("TEMP" + str(b.temporary))
-                    b.delete()
+                location = ("*(int*)(%s)" % (addr))
+                print("mem used " + location)
+                b = gdb.Breakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
+                gdb.execute("rc")
+                #XXX temporary breakpoints aren't working for some reason, so we delete manually
+                # print("TEMP" + str(b.temporary))
+                b.delete()
         else:
             print("unknown src")
 
