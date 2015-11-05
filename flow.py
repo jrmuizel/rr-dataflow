@@ -31,6 +31,12 @@ def normalize_reg(reg):
 
 def isregdest(i, reg):
     print("isregdest")
+
+    # check for implicit writes
+    for r in i.regs_write:
+        if normalize_reg(reg) == normalize_reg(r):
+            return true
+
     print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
     if i.id in (X86_INS_PUSH, X86_INS_CALL, X86_INS_JMP):
         # these instruction don't write to a register
