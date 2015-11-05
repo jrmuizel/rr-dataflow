@@ -50,13 +50,13 @@ def isregdest(i, reg):
         print("unknown src")
 
 def getinsn():
-        length = gdb.selected_frame().architecture().disassemble(gdb.selected_frame().pc())[0]['length']
-        CODE = gdb.selected_inferior().read_memory(gdb.selected_frame().pc(), length).tobytes()
-        md = Cs(CS_ARCH_X86, CS_MODE_64)
-        md.detail = True
-        insns = list(md.disasm(CODE, 0x1000))
-        assert(len(insns) == 1)
-        return insns[0]
+    length = gdb.selected_frame().architecture().disassemble(gdb.selected_frame().pc())[0]['length']
+    CODE = gdb.selected_inferior().read_memory(gdb.selected_frame().pc(), length).tobytes()
+    md = Cs(CS_ARCH_X86, CS_MODE_64)
+    md.detail = True
+    insns = list(md.disasm(CODE, 0x1000))
+    assert(len(insns) == 1)
+    return insns[0]
 
 class Origin(gdb.Command):
     def __init__(self):
