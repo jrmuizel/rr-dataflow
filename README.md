@@ -1,7 +1,12 @@
-Debugging reftest with RR
+Debugging reftests with RR
 
 When debugging reftests it's common to want to trace back the contents of pixel to see where they came from.
-This week I wrote a tool to help with this.
+This week I wrote a tool called rr-dataflow to help with this.
+
+What follows is a log of a rr session where I use this tool to trace back the contents of a pixel to the code responsible for it being set.
+In this case I'm using the softpipe mesa driver which is a simple software implementation of OpenGL. This means that I can trace through
+the entire graphics pipeline as needed.
+
 ```
 Breakpoint 1, mozilla::WebGLContext::ReadPixels (this=0x7fc064bc7000, x=0, y=0, width=64, height=64, format=6408, 
     type=5121, pixels=..., rv=...) at /home/jrmuizel/src/gecko/dom/canvas/WebGLContextGL.cpp:1411
@@ -73,7 +78,7 @@ We end up at a memcpy inside of readpixels that copies into the destination buff
     at /home/jrmuizel/src/gecko/dom/canvas/WebGLContextGL.cpp:1312
 ```
 From here we can see that the memcpy is storing the value of ymm4 into [r10]
-We use the origin command to step back to the place where ymm4 is loaded.
+We use the `origin` command to step back to the place where ymm4 is loaded.
 ```
 (gdb) origin
 0x1000:	vmovdqu	ymmword ptr [r10], ymm4
@@ -117,8 +122,8 @@ reg used ymm4
 ```
 We end up the instruction that loads ymm4 from [rsi]. Origin
 does this by single stepping backwards looking for writes to
-the ymm4 register. Frome here we want to continue tracking
-the origin. We use the origin command again. This time
+the ymm4 register. From here we want to continue tracking
+the origin. We use the `origin` command again. This time
 it sets a hardware watchpoint on the address in rsi.
 ```
 (gdb) origin
@@ -150,7 +155,7 @@ is used for rendering to the backbuffer that ReadPixels is reading from.
     at ../../src/gallium/auxiliary/util/u_inlines.h:457
 #9  0x00007fc075cdd6bd in st_MapRenderbuffer (ctx=<optimized out>, rb=0x7fc0665e09d0, x=0, y=<optimized out>, w=<optimized out>, h=64, mode=1, mapOut=0x7fff2da85cf8, rowStrideOut=0x7fff2da85cf0) at state_tracker/st_cb_fbo.c:772
 ```
-We use the origin command again. This time we have rep movsb operation that reads from memory as a source. Origin uses
+We use the `origin` command again. This time we have rep movsb operation that reads from memory as a source. Origin uses
 a hardware watchpoint on that address again.
 ```
 (gdb) origin
@@ -183,7 +188,7 @@ to the byte value that goes in the destination tile.
 #9  0x00007fc075c507b2 in _mesa_readpixels (packing=0x7fc05c3e92e8, pixels=0x7fc05c9d5000, type=5121, format=766008576, height=64, width=64, y=0, x=0, ctx=0x7fc05c3ce000) at main/readpix.c:234
 ```
 
-We see that ecx is being stored into [r10 - 4]. We use origin to track back to the source.
+We see that ecx is being stored into [r10 - 4]. We use `origin` to track back to the source.
 ```
 (gdb) origin
 0x1000:	mov	dword ptr [r10 - 4], ecx
@@ -239,7 +244,7 @@ We end up at the clear_tile_rgba function which is settting the data in the buff
     at draw/draw_pt_emit.c:261
 #9  0x00007fc075e2d025 in fetch_pipeline_generic (prim_info=0x7fff2da85f80, vert_info=0x7fff2da85e40, emit=<optimized out>) at draw/draw_pt_fetch_shade_pipeline.c:196
 ```
-We use origin again twice to track through the store and the load.
+We use `origin` again twice to track through the store and the load.
 ```
 (gdb) origin
 0x1000:	movss	dword ptr [rax - 0xc], xmm0
