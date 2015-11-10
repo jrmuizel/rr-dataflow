@@ -74,6 +74,8 @@ class Origin(gdb.Command):
         print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
         if len(i.operands) == 2:
             src = i.operands[1]
+            # XXX we want to check if we also use the dest register so
+            # that we know if the src is ambiguous
             print(src.type)
             if src.type == X86_OP_REG:
                 print("reg used %s \n" %i.reg_name(src.reg)),
