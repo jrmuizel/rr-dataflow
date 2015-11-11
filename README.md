@@ -1,7 +1,6 @@
 Debugging reftests with RR
 
-When debugging reftests it's common to want to trace back the contents of pixel to see where they came from.
-This week I wrote a tool called [rr-dataflow](https://github.com/jrmuizel/rr-dataflow/) to help with this.
+When debugging reftests it's common to want to trace back the contents of pixel to see where they came from. I wrote a tool called [rr-dataflow](https://github.com/jrmuizel/rr-dataflow/) to help with this.
 
 What follows is a log of a rr session where I use this tool to trace back the contents of a pixel to the code responsible for it being set.
 In this case I'm using the softpipe mesa driver which is a simple software implementation of OpenGL. This means that I can trace through
