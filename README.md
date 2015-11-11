@@ -285,6 +285,5 @@ We end up in sp_tile_cache_clear which is setting up the clear color.
 ```
 
 Running a backtrace we see that this goes back to a call to WebGLContext::Clear. This is the actual clear call that triggers the code
-that eventually sets the pixel to the value that we see when we call glReadPixels.
-
-
+that eventually sets the pixel to the value that we see when we call glReadPixels. At this point we've travelled through the entire pipeline, and we've done it
+with minimal effort through the magic of [rr](https://github.com/mozilla/rr).
