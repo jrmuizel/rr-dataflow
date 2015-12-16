@@ -21,13 +21,28 @@ subregs = { X86_REG_AL: X86_REG_RAX,
             X86_REG_EDX: X86_REG_RDX,
             X86_REG_EBP: X86_REG_RBP,
             X86_REG_EDI: X86_REG_RDI,
-            X86_REG_ESI: X86_REG_RSI }
+            X86_REG_DI:  X86_REG_RDI,
+            X86_REG_DIL: X86_REG_RDI,
+            X86_REG_ESI: X86_REG_RSI,
+            X86_REG_SI:  X86_REG_RSI,
+            X86_REG_SIL: X86_REG_RSI,
+            X86_REG_SP:  X86_REG_RSP,
+            X86_REG_SPL: X86_REG_RSP,
+            X86_REG_BP:  X86_REG_RBP,
+            X86_REG_BPL: X86_REG_RBP }
 
 
 def normalize_reg(reg):
     if reg in subregs:
         reg = subregs[reg]
     return reg
+
+def ismov(i):
+    if i.id in (X86_INS_MOV,):
+        return True
+    print("not move %s" % i.mnemonic)
+    return False
+
 
 def isregdest(i, reg):
     print("isregdest")
@@ -73,6 +88,7 @@ class Origin(gdb.Command):
         i = getinsn()
         print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
         if len(i.operands) == 2:
+            ismov(i)
             src = i.operands[1]
             # XXX we want to check if we also use the dest register so
             # that we know if the src is ambiguous
@@ -83,10 +99,12 @@ class Origin(gdb.Command):
                 gdb.execute('rsi')
                 i = getinsn()
                 while not isregdest(i, target):
+                    # single step by instruction backwards until we find an instruction
+                    # that has target as a destination register
                     gdb.execute('rsi')
                     print("pc %x" % (gdb.selected_frame().pc()))
                     i = getinsn()
-            if src.type == X86_OP_MEM:
+            elif src.type == X86_OP_MEM:
                 if src.mem.index:
                     print("index (int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
                     addr = gdb.parse_and_eval("(int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
@@ -99,6 +117,8 @@ class Origin(gdb.Command):
                 #XXX temporary breakpoints aren't working for some reason, so we delete manually
                 # print("TEMP" + str(b.temporary))
                 b.delete()
+            else:
+                print("unknown src type")
         else:
             print("unknown src")
 
