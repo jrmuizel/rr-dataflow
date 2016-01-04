@@ -45,8 +45,6 @@ def ismov(i):
 
 
 def isregdest(i, reg):
-    print("isregdest")
-
     # check for implicit writes
     for r in i.regs_write:
         if normalize_reg(reg) == normalize_reg(r):
@@ -79,11 +77,22 @@ def getinsn():
     assert(len(insns) == 1)
     return insns[0]
 
+def step_and_watch_register(target):
+    gdb.execute('rsi')
+    i = getinsn()
+    while not isregdest(i, target):
+        # single step by instruction backwards until we find an instruction
+        # that has target as a destination register
+        gdb.execute('rsi')
+        print("pc %x" % (gdb.selected_frame().pc()))
+        i = getinsn()
+
 class Origin(gdb.Command):
     def __init__(self):
         super (Origin, self).__init__("origin", gdb.COMMAND_SUPPORT,
                                               gdb.COMPLETE_NONE,
                                               True)
+
     def invoke(self, arg, from_tty):
         i = getinsn()
         print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
@@ -94,16 +103,8 @@ class Origin(gdb.Command):
             # that we know if the src is ambiguous
             print(src.type)
             if src.type == X86_OP_REG:
-                print("reg used %s \n" %i.reg_name(src.reg)),
-                target = src.reg
-                gdb.execute('rsi')
-                i = getinsn()
-                while not isregdest(i, target):
-                    # single step by instruction backwards until we find an instruction
-                    # that has target as a destination register
-                    gdb.execute('rsi')
-                    print("pc %x" % (gdb.selected_frame().pc()))
-                    i = getinsn()
+                print("watching %s \n" %i.reg_name(src.reg)),
+                step_and_watch_register(src.reg)
             elif src.type == X86_OP_MEM:
                 if src.mem.index:
                     print("index (int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
@@ -128,6 +129,14 @@ class Origin(gdb.Command):
                 #XXX temporary breakpoints aren't working for some reason, so we delete manually
                 # print("TEMP" + str(b.temporary))
                 b.delete()
+        elif len(i.operands) == 1 and i.id == X86_INS_PUSH:
+                src = i.operands[0]
+                print(src.type)
+                if src.type == X86_OP_REG:
+                    print("watching %s \n" %i.reg_name(src.reg)),
+                    step_and_watch_register(src.reg)
+                else:
+                    print("unknown src")
         else:
             print("unknown src")
 
