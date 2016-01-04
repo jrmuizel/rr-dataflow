@@ -84,7 +84,6 @@ def step_and_watch_register(target):
         # single step by instruction backwards until we find an instruction
         # that has target as a destination register
         gdb.execute('rsi')
-        print("pc %x" % (gdb.selected_frame().pc()))
         i = getinsn()
 
 class Origin(gdb.Command):
