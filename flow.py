@@ -60,7 +60,7 @@ def isregdest(i, reg):
         src = i.operands[0]
         if src.type == X86_OP_REG:
             print("reg used %s \n" %i.reg_name(src.reg))
-            return reg == src.reg
+            return normalize_reg(reg) == normalize_reg(src.reg)
     elif len(i.operands) == 2:
         print("two oper")
         src = i.operands[0]
@@ -119,6 +119,15 @@ class Origin(gdb.Command):
                 b.delete()
             else:
                 print("unknown src type")
+        elif len(i.operands) == 1 and i.id == X86_INS_POP:
+                addr = gdb.parse_and_eval("(int*)($sp)")
+                location = ("*(int*)(%s)" % (addr))
+                print("mem used " + location)
+                b = gdb.Breakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
+                gdb.execute("rc")
+                #XXX temporary breakpoints aren't working for some reason, so we delete manually
+                # print("TEMP" + str(b.temporary))
+                b.delete()
         else:
             print("unknown src")
 
