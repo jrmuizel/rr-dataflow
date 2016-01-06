@@ -60,11 +60,16 @@ def isregdest(i, reg):
             print("reg used %s \n" %i.reg_name(src.reg))
             return normalize_reg(reg) == normalize_reg(src.reg)
     elif len(i.operands) == 2:
-        print("two oper")
         src = i.operands[0]
         if src.type == X86_OP_REG:
             print("reg used %s \n" %i.reg_name(src.reg)),
             return normalize_reg(reg) == normalize_reg(src.reg)
+    elif len(i.operands) == 1 and i.operands[0].type == X86_OP_IMM:
+        # immediate operands are not registers
+        pass
+    elif len(i.operands) == 0:
+        # no operands and no implicit writes means no writes
+        pass
     else:
         print("unknown src")
 
