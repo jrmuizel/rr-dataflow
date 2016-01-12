@@ -31,6 +31,9 @@ subregs = { X86_REG_AL: X86_REG_RAX,
             X86_REG_BP:  X86_REG_RBP,
             X86_REG_BPL: X86_REG_RBP }
 
+def debug(string):
+    #print(string)
+    pass
 
 def normalize_reg(reg):
     if reg in subregs:
@@ -50,19 +53,19 @@ def isregdest(i, reg):
         if normalize_reg(reg) == normalize_reg(r):
             return true
 
-    print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
+    debug("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
     if i.id in (X86_INS_PUSH, X86_INS_CALL, X86_INS_JMP):
         # these instruction don't write to a register
         pass
     elif i.id in (X86_INS_POP,):
         src = i.operands[0]
         if src.type == X86_OP_REG:
-            print("reg used %s \n" %i.reg_name(src.reg))
+            debug("reg used %s \n" %i.reg_name(src.reg))
             return normalize_reg(reg) == normalize_reg(src.reg)
     elif len(i.operands) == 2:
         src = i.operands[0]
         if src.type == X86_OP_REG:
-            print("reg used %s \n" %i.reg_name(src.reg)),
+            debug("reg used %s \n" %i.reg_name(src.reg)),
             return normalize_reg(reg) == normalize_reg(src.reg)
     elif len(i.operands) == 1 and i.operands[0].type == X86_OP_IMM:
         # immediate operands are not registers
