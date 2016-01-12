@@ -1,4 +1,4 @@
 - add an origin-follow command which will continuously do an origin until it gets to a place
   where it can't go any further
 - add an origin-revert command that takes you back to the place where you started the last
-  origin-follow
+  origin-follow. It should be possible to implement this using gdb's checkpoint support.

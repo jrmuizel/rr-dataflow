@@ -7,6 +7,11 @@ rr-dataflow adds an 'origin' command to gdb that you can use to track where data
 To use this origin command add it to gdb with something like the following:
 (gdb) source rr-dataflow/flow.py
 
+You will need the python bindings for
+[capstone](https://https://github.com/aquynh/capstone) installed. Ubuntu gdb
+uses python3 and there's no package for the python3 bindings to capstone, so you'll
+need to compile from source.
+
 
 What follows is a log of a rr session where I use this tool to trace back the contents of a pixel to the code responsible for it being set.
 In this case I'm using the softpipe mesa driver which is a simple software implementation of OpenGL. This means that I can trace through
