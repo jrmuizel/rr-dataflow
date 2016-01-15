@@ -1,17 +1,26 @@
-Debugging reftests with RR
+# Debugging reftests with RR
 
 When debugging reftests it's common to want to trace back the contents of pixel to
 see where they came from. I wrote a tool called [rr-dataflow](https://github.com/jrmuizel/rr-dataflow/) to help with this.
 rr-dataflow adds an 'origin' command to gdb that you can use to track where data came from.
 
-To use this origin command add it to gdb with something like the following:
-(gdb) source rr-dataflow/flow.py
+# Bootstrap
+
+Run ./install.sh to install the capstone python binding and optionally register flow.py in .gdbinit.
+
+# Prerequisites
 
 You will need the python bindings for
 [capstone](https://github.com/aquynh/capstone) installed. Ubuntu gdb
 uses python3 and there's no package for the python3 bindings to capstone, so you'll
 need to compile from source.
 
+# Installing
+
+To use this origin command add it to gdb with something like the following:
+(gdb) source rr-dataflow/flow.py
+
+# Demo
 
 What follows is a log of a rr session where I use this tool to trace back the contents of a pixel to the code responsible for it being set.
 In this case I'm using the softpipe mesa driver which is a simple software implementation of OpenGL. This means that I can trace through
