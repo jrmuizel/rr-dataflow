@@ -8,7 +8,7 @@ To use this origin command add it to gdb with something like the following:
 (gdb) source rr-dataflow/flow.py
 
 You will need the python bindings for
-[capstone](https://https://github.com/aquynh/capstone) installed. Ubuntu gdb
+[capstone](https://github.com/aquynh/capstone) installed. Ubuntu gdb
 uses python3 and there's no package for the python3 bindings to capstone, so you'll
 need to compile from source.
 
