@@ -51,30 +51,19 @@ def isregdest(i, reg):
     # check for implicit writes
     for r in i.regs_write:
         if normalize_reg(reg) == normalize_reg(r):
-            return true
-
-    debug("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
-    if i.id in (X86_INS_PUSH, X86_INS_CALL, X86_INS_JMP):
-        # these instruction don't write to a register
-        pass
-    elif i.id in (X86_INS_POP,):
-        src = i.operands[0]
-        if src.type == X86_OP_REG:
-            debug("reg used %s \n" %i.reg_name(src.reg))
-            return normalize_reg(reg) == normalize_reg(src.reg)
-    elif len(i.operands) == 2:
-        src = i.operands[0]
-        if src.type == X86_OP_REG:
-            debug("reg used %s \n" %i.reg_name(src.reg)),
-            return normalize_reg(reg) == normalize_reg(src.reg)
-    elif len(i.operands) == 1 and i.operands[0].type == X86_OP_IMM:
-        # immediate operands are not registers
-        pass
-    elif len(i.operands) == 0:
-        # no operands and no implicit writes means no writes
-        pass
-    else:
-        print("unknown src")
+            return True
+    for o in i.operands:
+        if o.type == X86_OP_REG and (o.access & CS_AC_WRITE):
+            if normalize_reg(reg) == normalize_reg(o.reg):
+                return True
+        elif o.type == X86_OP_IMM:
+            # immediate operands are not registers
+            pass
+        elif o.type == X86_OP_MEM:
+            # memory operands don't write to registers
+            pass
+        else:
+            print("unknown src")
 
 def getinsn():
     length = gdb.selected_frame().architecture().disassemble(gdb.selected_frame().pc())[0]['length']

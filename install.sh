@@ -6,6 +6,7 @@ fi
 
 (
   cd capstone
+  git checkout -b next origin/next
   ./make.sh
   sudo ./make.sh install
   cd bindings/python

@@ -11,9 +11,8 @@ Run ./install.sh to install the capstone python binding and optionally register 
 # Prerequisites
 
 You will need the python bindings for
-[capstone](https://github.com/aquynh/capstone) installed. Ubuntu gdb
-uses python3 and there's no package for the python3 bindings to capstone, so you'll
-need to compile from source.
+[capstone](https://github.com/aquynh/capstone) installed. rr-dataflow depends
+on capstone4 which is not yet released. The current pre-release code is available on the next branch of the capstone git repository.
 
 # Installing
 
