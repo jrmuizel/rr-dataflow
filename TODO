@@ -1,8 +1,13 @@
 - Add an origin-follow command which will continuously do an origin until it gets to a place
-  where it can't go any further
+  where it can't go any further. Would this be useful on a heap allocated addres?
+  It would take us into the malloc implementation, when we probably want to stop
+  at the allocation site. Perhaps we could special case malloc somehow...
 - Add an origin-revert command that takes you back to the place where you started the last
   origin-follow. It should be possible to implement this using gdb's checkpoint support.
 - Switch to capstone 4. This will allow us to directly determine which registers are
   being read and written, which should improve the reliablity
+- Add the ability to choose which operand to follow when there's more than one possible source.
+- Tighten up operand size and offset handling. This will allow for more precise watching
+  of sizes other than int.
 - Port to C++ and include directly in RR. This should improve performance and should
   fix the missed write watchpoints for unchanged values problem.
