@@ -11,3 +11,5 @@
   of sizes other than int.
 - Port to C++ and include directly in RR. This should improve performance and should
   fix the missed write watchpoints for unchanged values problem.
+- Disambiguate sources depending on their value. i.e. if you have something like a = a + b where
+  b = 0.
