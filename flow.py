@@ -65,6 +65,14 @@ def isregdest(i, reg):
         else:
             print("unknown src")
 
+def ismemwrite(i):
+    for o in i.operands:
+        if o.type == X86_OP_MEM and (o.access & CS_AC_WRITE):
+            return True
+    if i.id == X86_INS_PUSH:
+        return True
+
+
 def getinsn():
     length = gdb.selected_frame().architecture().disassemble(gdb.selected_frame().pc())[0]['length']
     CODE = gdb.selected_inferior().read_memory(gdb.selected_frame().pc(), length).tobytes()
@@ -109,7 +117,22 @@ class Origin(gdb.Command):
                     addr = gdb.parse_and_eval("(int*)($%s + %d)" % (i.reg_name(src.mem.base), src.mem.disp))
                 location = ("*(int*)(%s)" % (addr))
                 print("mem used " + location)
-                b = gdb.Breakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
+
+                # Write watchpoints only trigger if the value has changed
+                # but we want to follow all writes so use an WP_ACCESS
+                # watchpoint and manually check if we have a write
+                class MyBreakpoint(gdb.Breakpoint):
+                    def stop(self):
+                        i = getinsn()
+                        print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
+                        if ismemwrite(i): #XXX: is memwrite is sometimes broken
+                            print ("is mem write")
+                            return True
+                        else:
+                            print ("is not mem write")
+                            return True
+
+                b = MyBreakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
                 gdb.execute("rc")
                 #XXX temporary breakpoints aren't working for some reason, so we delete manually
                 # print("TEMP" + str(b.temporary))
