@@ -98,66 +98,74 @@ class Origin(gdb.Command):
                                               True)
 
     def invoke(self, arg, from_tty):
-        i = getinsn()
-        print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
-        if len(i.operands) == 2:
-            ismov(i)
-            src = i.operands[1]
-            # XXX we want to check if we also use the dest register so
-            # that we know if the src is ambiguous
-            print(src.type)
-            if src.type == X86_OP_REG:
-                print("watching %s \n" %i.reg_name(src.reg)),
-                step_and_watch_register(src.reg)
-            elif src.type == X86_OP_MEM:
-                if src.mem.index:
-                    print("index (int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
-                    addr = gdb.parse_and_eval("(int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
-                else:
-                    addr = gdb.parse_and_eval("(int*)($%s + %d)" % (i.reg_name(src.mem.base), src.mem.disp))
-                location = ("*(int*)(%s)" % (addr))
-                print("mem used " + location)
-
-                # Write watchpoints only trigger if the value has changed
-                # but we want to follow all writes so use an WP_ACCESS
-                # watchpoint and manually check if we have a write
-                class MyBreakpoint(gdb.Breakpoint):
-                    def stop(self):
-                        i = getinsn()
-                        print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
-                        if ismemwrite(i): #XXX: is memwrite is sometimes broken
-                            print ("is mem write")
-                            return True
-                        else:
-                            print ("is not mem write")
-                            return True
-
-                b = MyBreakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
-                gdb.execute("rc")
-                #XXX temporary breakpoints aren't working for some reason, so we delete manually
-                # print("TEMP" + str(b.temporary))
-                b.delete()
-            else:
-                print("unknown src type")
-        elif len(i.operands) == 1 and i.id == X86_INS_POP:
-                addr = gdb.parse_and_eval("(int*)($sp)")
-                location = ("*(int*)(%s)" % (addr))
-                print("mem used " + location)
-                b = gdb.Breakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
-                gdb.execute("rc")
-                #XXX temporary breakpoints aren't working for some reason, so we delete manually
-                # print("TEMP" + str(b.temporary))
-                b.delete()
-        elif len(i.operands) == 1 and i.id == X86_INS_PUSH:
-                src = i.operands[0]
+        follow = (arg == "-f")
+        while True:
+            i = getinsn()
+            print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
+            if len(i.operands) == 2:
+                ismov(i)
+                src = i.operands[1]
+                # XXX we want to check if we also use the dest register so
+                # that we know if the src is ambiguous
                 print(src.type)
                 if src.type == X86_OP_REG:
                     print("watching %s \n" %i.reg_name(src.reg)),
                     step_and_watch_register(src.reg)
+                elif src.type == X86_OP_MEM:
+                    if src.mem.index:
+                        print("index (int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
+                        addr = gdb.parse_and_eval("(int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
+                    else:
+                        addr = gdb.parse_and_eval("(int*)($%s + %d)" % (i.reg_name(src.mem.base), src.mem.disp))
+                    location = ("*(int*)(%s)" % (addr))
+                    print("mem used " + location)
+
+                    # Write watchpoints only trigger if the value has changed
+                    # but we want to follow all writes so use an WP_ACCESS
+                    # watchpoint and manually check if we have a write
+                    class MyBreakpoint(gdb.Breakpoint):
+                        def stop(self):
+                            i = getinsn()
+                            print(gdb.selected_frame().pc())
+                            print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
+                            if ismemwrite(i): #XXX: is memwrite is sometimes broken
+                                print ("is mem write")
+                                return True
+                            else:
+                                print ("is not mem write")
+                                return True
+
+                    b = MyBreakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
+                    gdb.execute("rc")
+                    #XXX temporary breakpoints aren't working for some reason, so we delete manually
+                    # print("TEMP" + str(b.temporary))
+                    b.delete()
                 else:
-                    print("unknown src")
-        else:
-            print("unknown src")
+                    print("unknown src type")
+                    follow = False
+            elif len(i.operands) == 1 and i.id == X86_INS_POP:
+                    addr = gdb.parse_and_eval("(int*)($sp)")
+                    location = ("*(int*)(%s)" % (addr))
+                    print("mem used " + location)
+                    b = gdb.Breakpoint(location, gdb.BP_WATCHPOINT, gdb.WP_WRITE, False, False)
+                    gdb.execute("rc")
+                    #XXX temporary breakpoints aren't working for some reason, so we delete manually
+                    # print("TEMP" + str(b.temporary))
+                    b.delete()
+            elif len(i.operands) == 1 and i.id == X86_INS_PUSH:
+                    src = i.operands[0]
+                    print(src.type)
+                    if src.type == X86_OP_REG:
+                        print("watching %s \n" %i.reg_name(src.reg)),
+                        step_and_watch_register(src.reg)
+                    else:
+                        print("unknown src")
+                        follow = False
+            else:
+                print("unknown src")
+                follow = False
+            if not follow:
+                break
 
 Origin()
 
