@@ -66,12 +66,32 @@ def isregdest(i, reg):
             print("unknown src")
 
 def ismemwrite(i):
+    print(i.operands)
     for o in i.operands:
+        print(o)
+        print(o.type, o.access)
         if o.type == X86_OP_MEM and (o.access & CS_AC_WRITE):
             return True
     if i.id == X86_INS_PUSH:
         return True
 
+def eval_mem_operand(i, o):
+    if o.mem.index:
+        addr = gdb.parse_and_eval("(int*)($%s + $%s*%d + %d)" % (i.reg_name(o.mem.base), i.reg_name(o.mem.index), o.mem.scale, src.mem.disp))
+    else:
+        addr = gdb.parse_and_eval("(int*)($%s + %d)" % (i.reg_name(o.mem.base), o.mem.disp))
+    return addr
+
+
+def memaddress(i):
+    for o in i.operands:
+        if o.type == X86_OP_MEM:
+            return eval_mem_operand(i, o)
+    if i.id == X86_INS_PUSH:
+        assert(False)
+        #XXX this needs testing
+        return gdb.parse_and_eval("(int*)($sp)")
+    assert(False)
 
 def getinsn():
     length = gdb.selected_frame().architecture().disassemble(gdb.selected_frame().pc())[0]['length']
@@ -91,6 +111,7 @@ def step_and_watch_register(target):
         gdb.execute('rsi')
         i = getinsn()
 
+offset = 0
 class Origin(gdb.Command):
     def __init__(self):
         super (Origin, self).__init__("origin", gdb.COMMAND_SUPPORT,
@@ -98,6 +119,7 @@ class Origin(gdb.Command):
                                               True)
 
     def invoke(self, arg, from_tty):
+        global offset
         follow = (arg == "-f")
         while True:
             i = getinsn()
@@ -112,12 +134,11 @@ class Origin(gdb.Command):
                     print("watching %s \n" %i.reg_name(src.reg)),
                     step_and_watch_register(src.reg)
                 elif src.type == X86_OP_MEM:
-                    if src.mem.index:
-                        print("index (int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
-                        addr = gdb.parse_and_eval("(int*)($%s + $%s*%d + %d)" % (i.reg_name(src.mem.base), i.reg_name(src.mem.index), src.mem.scale, src.mem.disp))
-                    else:
-                        addr = gdb.parse_and_eval("(int*)($%s + %d)" % (i.reg_name(src.mem.base), src.mem.disp))
-                    location = ("*(int*)(%s)" % (addr))
+                    addr = eval_mem_operand(i, src)
+                    if offset > 0:
+                        print("adjusting", offset)
+                    addr = int(addr) + offset
+                    location = ("*(int*)(0x%x)" % (addr))
                     print("mem used " + location)
 
                     # Write watchpoints only trigger if the value has changed
@@ -126,6 +147,10 @@ class Origin(gdb.Command):
                     class MyBreakpoint(gdb.Breakpoint):
                         def stop(self):
                             i = getinsn()
+                            actual_addr = memaddress(i)
+                            global offset
+                            offset = int(addr) - int(actual_addr)
+                            print(actual_addr, "0x%x" % (addr) , "offset", offset)
                             print(gdb.selected_frame().pc())
                             print("0x%x:\t%s\t%s" %(i.address, i.mnemonic, i.op_str))
                             if ismemwrite(i): #XXX: is memwrite is sometimes broken
