@@ -29,7 +29,31 @@ subregs = { X86_REG_AL: X86_REG_RAX,
             X86_REG_SP:  X86_REG_RSP,
             X86_REG_SPL: X86_REG_RSP,
             X86_REG_BP:  X86_REG_RBP,
-            X86_REG_BPL: X86_REG_RBP }
+            X86_REG_BPL: X86_REG_RBP,
+            X86_REG_R8B: X86_REG_R8,
+            X86_REG_R9B: X86_REG_R9,
+            X86_REG_R10B: X86_REG_R10,
+            X86_REG_R11B: X86_REG_R11,
+            X86_REG_R12B: X86_REG_R12,
+            X86_REG_R13B: X86_REG_R13,
+            X86_REG_R14B: X86_REG_R14,
+            X86_REG_R15B: X86_REG_R15,
+            X86_REG_R8D: X86_REG_R8,
+            X86_REG_R9D: X86_REG_R9,
+            X86_REG_R10D: X86_REG_R10,
+            X86_REG_R11D: X86_REG_R11,
+            X86_REG_R12D: X86_REG_R12,
+            X86_REG_R13D: X86_REG_R13,
+            X86_REG_R14D: X86_REG_R14,
+            X86_REG_R15D: X86_REG_R15,
+            X86_REG_R8W: X86_REG_R8,
+            X86_REG_R9W: X86_REG_R9,
+            X86_REG_R10W: X86_REG_R10,
+            X86_REG_R11W: X86_REG_R11,
+            X86_REG_R12W: X86_REG_R12,
+            X86_REG_R13W: X86_REG_R13,
+            X86_REG_R14W: X86_REG_R14,
+            X86_REG_R15W: X86_REG_R15}
 
 def debug(string):
     #print(string)
@@ -53,9 +77,10 @@ def isregdest(i, reg):
         if normalize_reg(reg) == normalize_reg(r):
             return True
     for o in i.operands:
-        if o.type == X86_OP_REG and (o.access & CS_AC_WRITE):
-            if normalize_reg(reg) == normalize_reg(o.reg):
-                return True
+        if o.type == X86_OP_REG:
+            if o.access & CS_AC_WRITE:
+                if normalize_reg(reg) == normalize_reg(o.reg):
+                    return True
         elif o.type == X86_OP_IMM:
             # immediate operands are not registers
             pass
@@ -63,7 +88,7 @@ def isregdest(i, reg):
             # memory operands don't write to registers
             pass
         else:
-            print("unknown src")
+            print("unknown type %d" % o.type)
 
 def ismemwrite(i):
     print(i.operands)
