@@ -102,7 +102,7 @@ def ismemwrite(i):
 
 def eval_mem_operand(i, o):
     if o.mem.index:
-        addr = gdb.parse_and_eval("(int*)($%s + $%s*%d + %d)" % (i.reg_name(o.mem.base), i.reg_name(o.mem.index), o.mem.scale, src.mem.disp))
+        addr = gdb.parse_and_eval("(int*)($%s + $%s*%d + %d)" % (i.reg_name(o.mem.base), i.reg_name(o.mem.index), o.mem.scale, o.mem.disp))
     else:
         addr = gdb.parse_and_eval("(int*)($%s + %d)" % (i.reg_name(o.mem.base), o.mem.disp))
     return addr
